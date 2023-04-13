@@ -1,6 +1,7 @@
 // database.module.ts
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import {Module} from '@nestjs/common';
+import {TypeOrmModule} from '@nestjs/typeorm';
+import {MongooseModule} from "@nestjs/mongoose";
 
 @Module({
     imports: [
@@ -16,6 +17,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
             autoLoadEntities: true,
             synchronize: true,
             logging: true,
-        })],
+        }),
+        MongooseModule.forRoot
+        ('mongodb+srv://mariussokolovsky:-nqbrNuBam*MX9S@maniek.uwv8idy.mongodb.net/?retryWrites=true&w=majority'),
+    ],
 })
-export class DatabaseModule {}
+export class DatabaseModule {
+}

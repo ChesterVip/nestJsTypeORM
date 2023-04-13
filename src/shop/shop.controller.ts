@@ -1,4 +1,4 @@
-import {Controller, Delete, Get, HostParam, Inject, Param, Post, Scope} from '@nestjs/common';
+import {Body, Controller, Delete, Get, HostParam, Inject, Param, Patch, Post, Redirect, Scope} from '@nestjs/common';
 import {
     CreateProductResponse,
     GetListOfItemShopResponse,
@@ -41,20 +41,29 @@ export class ShopController {
     async getOneProduct(
         @Param("id") id: string,
     ): Promise<GetOneProductResponse>{
-        return await this.shopService.getOneProduct(id);
+         return await this.shopService.getOneProduct(id);
+
     }
 
-    @Delete("/:id")
+    @Delete("/delete/:id")
     async deleteOneProduct(
         @Param("id") id: string,
-    ): Promise<{}>{
-        return await this.shopService.deleteOneProduct(id);
+    ):Promise<{} | void> {
+         await this.shopService.deleteOneProduct(id);
+    }
+
+    @Delete("/delete-many")
+    async deleteMany(
+        @Body() req: { name: string },
+    ){
+        await this.shopService.deleteMany(req.name)
     }
 
     @Post("/")
-    async createNewProduct(): Promise<CreateProductResponse>{
-        return await this.shopService.createProduct();
+    async createDummyProduct(): Promise<CreateProductResponse>{
+        return await this.shopService.createDummyProduct();
     }
+
 
     @Post("/:id")
     async updateProduct(
@@ -63,6 +72,16 @@ export class ShopController {
         return this.shopService.addBoughtCounter(id);
     }
 
+    @Patch("/update/:id")
+    async updateOne(
+        @Param("id") id: string,
+        @Body() req: {
+            description?: string,
+            price?: number,
+        }
+    ){
+        return this.shopService.updateProduct(id, req.description, req.price)
+    }
     // @Get("/welcome")
     // testRedirect(
     //     @HostParam("name") name: string,
