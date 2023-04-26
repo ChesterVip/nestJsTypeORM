@@ -4,9 +4,12 @@ import {AppService} from './app.service';
 import {ShopModule} from './shop/shop.module';
 import {BasketModule} from "./basket/basket.module";
 import {UserModule} from './users/user.module';
-import {TypeOrmModule} from "@nestjs/typeorm";
 import { DatabaseModule } from '../database/database.module';
-import {DataSource} from "typeorm";
+import { CacheModule } from './cache/cache.module';
+import { DiscountCodeModule } from './discount-code/discount-code.module';
+import { CronModule } from './cron/cron.module';
+import { MailModule } from './mail/mail.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
     imports: [
@@ -14,6 +17,11 @@ import {DataSource} from "typeorm";
         ShopModule,
         BasketModule,
         UserModule,
+        CacheModule,
+        DiscountCodeModule,
+        MailModule,
+        CronModule,
+        AuthModule,
     ],
     controllers: [AppController],
     providers: [AppService],

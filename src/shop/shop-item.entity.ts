@@ -23,6 +23,8 @@ export class ShopItem extends BaseEntity implements IShopItem {
     @PrimaryGeneratedColumn("uuid")
     id: string;
 
+
+
     @Column({
         default: "(brak)",
         length: 1000,
@@ -37,6 +39,11 @@ export class ShopItem extends BaseEntity implements IShopItem {
     })
     price: number;
 
+    @Column({
+        default: null,
+        nullable: true,
+    })
+    photoFn: string;
     @Column({
         default: () => "CURRENT_TIMESTAMP",
     })

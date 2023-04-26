@@ -1,4 +1,4 @@
-import {Body, Controller, Delete, Get, Inject, Param, Post} from '@nestjs/common';
+import {Body, Controller, Delete, Get, Inject, Param, Post, UseGuards, UseInterceptors} from '@nestjs/common';
 import {BasketService} from "./basket.service";
 import {AddProductDto} from "./dto/addProductDto";
 import {
@@ -8,6 +8,16 @@ import {
     RemoveProductFromBasketResponse
 } from "../interface/basket";
 import {ItemInBasket} from "./item-in-basket.entity";
+import {PasswordProtectGuard} from "../guards/password-protect.guard";
+import {UsePassword} from "../decorators/use-password.decorator";
+import {MyTimeoutInterceptor} from "../interceptors/my-timeout.interceptor";
+import {MyCacheInterceptor} from "../interceptors/my-cache.interceptor";
+import {UseTimeout} from "../decorators/use-timeout.decorator";
+import {AuthGuard} from "@nestjs/passport";
+import {UserObject} from "../decorators/user-object.decorator";
+import {Role, User} from "../users/user.entity";
+import {RoleGuard} from "../guards/role.guard";
+import {UserRole} from "../decorators/user-role.decorator";
 
 @Controller('/basket')
 export class BasketController {
@@ -17,10 +27,12 @@ export class BasketController {
     }
 
     @Post('/')
+    @UseGuards(AuthGuard("jwt"))
     addProductToBasket(
         @Body() item: AddProductDto,
+        @UserObject() user: User
     ): Promise<AddProductToBasketResponse> {
-        return this.basketService.adToTheBasket(item);
+        return this.basketService.adToTheBasket(item, user);
     }
 
     @Delete("/:id/:itemId")
@@ -32,18 +44,31 @@ export class BasketController {
     }
 
     @Get("/admin")
+    @UseGuards(AuthGuard("jwt"))
+    // @UsePassword("admin")
+    @UseGuards(RoleGuard)
+    @UserRole(Role.ADMIN)
     listAllBaskets(): Promise<ItemInBasket[]> {
+        // return new Promise(resolve => {});
         return this.basketService.getAll4Admin();
     }
     @Get("/all/stats")
+    @UsePassword("STATSPASS")
+    @UseGuards(PasswordProtectGuard)
+    @UseTimeout(3)
+    @UseInterceptors(MyTimeoutInterceptor, MyCacheInterceptor)
     getStats(): Promise<GetBasketStatsResponse>{
         return this.basketService.getStats();
+        // return new Promise(resolve => {});
     }
 
+    @UseGuards(AuthGuard("jwt"))
     @Get("/:id")
     listProductsInBasket(
         @Param("id") id: string,
+        @UserObject() user: User
     ): Promise<ItemInBasket[]> {
+        console.log(user)
         return this.basketService.getAll4User(id);
     }
 

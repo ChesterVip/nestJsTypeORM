@@ -10,6 +10,7 @@ import {ShopService} from "../shop/shop.service";
 import {DataSource} from "typeorm";
 import {ItemInBasket} from "./item-in-basket.entity";
 import {UserService} from "../users/user.service";
+import { User } from 'src/users/user.entity';
 
 
 @Injectable({
@@ -24,17 +25,15 @@ export class BasketService {
     ) {
     }
 
-    async adToTheBasket(item: AddProductDto): Promise<AddProductToBasketResponse> {
-        const {count, productId, userId} = item;
+    async adToTheBasket(item: AddProductDto, user: User): Promise<AddProductToBasketResponse> {
+        const {count, productId} = item;
         const shopItem = await this.shopService.getOneProduct(productId);
-        const user = await this.userService.getOneUser(userId);
+        // const user = await this.userService.getOneUser(userId);
         if (
             typeof count !== "number"
             || count === 0
-            || userId === ""
             || productId == ""
             || !shopItem
-            || !user
         ) return {
             isSuccess: false,
 
@@ -45,7 +44,6 @@ export class BasketService {
 
         await itemBasket.save();
         itemBasket.shopItem = shopItem;
-        itemBasket.user = user;
         shopItem.itemInBasket = itemBasket;
         await itemBasket.save();
 
@@ -151,9 +149,9 @@ export class BasketService {
             [userId: string ]: number
         } = {};
         for (const oneItemInBasket of allItemsInBasket){
-            console.log(oneItemInBasket);
+            // console.log(oneItemInBasket);
             baskets[oneItemInBasket.user.id] = baskets[oneItemInBasket.user.id] || 0;
-            console.log(baskets);
+            // console.log(baskets);
             baskets[oneItemInBasket.user.id] += oneItemInBasket.shopItem.price *
                 oneItemInBasket.count * 1.23;
         }

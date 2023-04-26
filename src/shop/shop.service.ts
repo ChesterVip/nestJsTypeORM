@@ -1,46 +1,58 @@
 import {forwardRef, Inject, Injectable} from '@nestjs/common';
-import {GetListOfItemShopResponse, GetOneProductResponse, GetPaginatedListOfProductsResponse} from "../interface/i-shop-item";
+import {GetListOfItemShopResponse, GetPaginatedListOfProductsResponse, IShopItem} from "../interface/i-shop-item";
 import {BasketService} from "../basket/basket.service";
 
 import {ShopItem} from "./shop-item.entity";
-import {DataSource, Like, Repository} from "typeorm";
+import {DataSource, Repository} from "typeorm";
 import {ShopItemDetails} from "./shop-item-details.entity";
 import {InjectRepository} from "@nestjs/typeorm";
-
+import {MailService} from "../mail/mail.service";
+import {AddProductDto} from "./dto/add-product.dto";
+import {MulterDiskUploadedFiles} from "../interface/files";
+import * as fs from "fs";
+import * as path from "path";
+import {STORAGE_FIELD, storageDir} from "../utils/storage";
+import {catchError} from "rxjs";
+import {errorToApiErrorMessage} from "../errors/errorToApiErrorMessage";
 
 @Injectable()
 export class ShopService {
+
     constructor(
         @Inject(forwardRef(() => BasketService)) private basketService: BasketService,
         @InjectRepository(ShopItem) private shopItemRepository: Repository<ShopItem>,
+        @Inject(MailService) private readonly mailService: MailService,
         private readonly dataSource: DataSource,
     ) {
     }
 
+    filter(shopItem: ShopItem): IShopItem {
+        const {id,price,description} = shopItem;
+        return {id,price,description};
+    }
+
     async getProducts(currentPage: number = 1): Promise<GetPaginatedListOfProductsResponse> {
         const maxPerPage = 3;
-
-
-        const [items, count] = await ShopItem.findAndCount({
-            skip: maxPerPage * (currentPage -1 ),
+        let [items, count] = await ShopItem.findAndCount({
+            skip: maxPerPage * (currentPage - 1),
             take: maxPerPage,
         });
+        const filteredItems = items.map(this.filter);
         const totalPages = Math.ceil(count / maxPerPage)
         console.log({count, totalPages});
 
         return {
-            items, pagesCount: totalPages,
+            filteredItems, pagesCount: totalPages
         };
-
     }
 
     async hasProduct(id: string): Promise<boolean> {
 
-        return (await this.getProducts()).items.some(item => item.id === id);
+        return (await this.getProducts()).filteredItems.some(item => item.id === id);
     }
 
     async getPriceOfProduct(id: string): Promise<number> {
-        return (await this.getProducts()).items.find(item => item.id === id).price;
+        return (await this.getProducts()).filteredItems.find(item => item.id === id).price;
     }
 
     async getOneProduct(id: string): Promise<ShopItem> {
@@ -67,8 +79,8 @@ export class ShopService {
 
         await ShopItem.save(newItem);
 
-        const details =  new ShopItemDetails();
-        details.color ="green";
+        const details = new ShopItemDetails();
+        details.color = "green";
         details.width = 1933;
         await details.save();
 
@@ -95,17 +107,70 @@ export class ShopService {
 
     async findProducts(description: string): Promise<GetListOfItemShopResponse> {
 
-      const query = await this.dataSource
+        const query = await this.dataSource
             .createQueryBuilder()
             .select("shopItem")
-            .from(ShopItem , "shopItem")
+            .from(ShopItem, "shopItem")
             .where("shopItem.description LIKE :description", {
                 description: `%${description}%`
             })
-          .orderBy("shopItem.price", "ASC")
-          .skip()
-          .take()
-          .getMany();
-      return query;
+            .orderBy("shopItem.price", "ASC")
+            .skip()
+            .take()
+            .getMany();
+        return query;
     }
+
+    async addProduct(req: AddProductDto, files: MulterDiskUploadedFiles): Promise<IShopItem> {
+        const  photo =  files?.photo?.[0] ?? null;
+        // const  film =  files?.film ?? [];
+        try {
+            const newProduct = await new ShopItem();
+            newProduct.description = req.description;
+            newProduct.price = req.price;
+            newProduct.photoFn = photo.filename;
+            await newProduct.save();
+            return newProduct;
+        } catch (e) {
+            try {
+                if (photo){
+                    fs.unlinkSync(photo.path);
+              }throw new Error(e)
+            }catch (e2){
+                throw new Error(e2)
+            }
+            }
+    }
+
+    async getPhoto(id: string, res: any) {
+        try {
+            const  one = await ShopItem.findOne({
+                where: {id}
+            });
+
+            if (!one) throw new Error("No Object found");
+
+            if (!one.photoFn) throw Object.assign(new Error("No foto in this Entity!"), { code: "404" });
+
+
+            if (!fs.existsSync(path.join(storageDir(), STORAGE_FIELD.PHOTO, one.photoFn))) {
+                throw new Error(`File not found: ${one.photoFn}`);
+            }
+
+            res.sendFile(one.photoFn, {
+                root: path.join(storageDir(), STORAGE_FIELD.PHOTO)
+            });
+
+        }catch (error) {
+            const { message, code } = error;
+            const status = code ? parseInt(code, 10) : 404;
+
+            res.status(status).json({
+                error: message,
+                status,
+            });
+        }
+
+        }
+
 }

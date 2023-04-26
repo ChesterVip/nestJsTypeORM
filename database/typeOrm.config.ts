@@ -4,6 +4,7 @@ import {migrations1678955519661} from "../1678955519661-migrations";
 import {ShopItemDetails} from "../src/shop/shop-item-details.entity";
 import {ItemInBasket} from "../src/basket/item-in-basket.entity";
 import {User} from "../src/users/user.entity";
+import {CacheEntity} from "../src/cache/cache-entity";
 
 export default new DataSource(
     {
@@ -14,7 +15,7 @@ export default new DataSource(
         password: 'maniek666',
         database: 'nestjs',
         synchronize: true,
-        entities: [ShopItem, ShopItemDetails, ItemInBasket, User],
+        entities: [ShopItem, ShopItemDetails, ItemInBasket, User, CacheEntity],
         // migrations: [migrations1678955519661],
     });
 

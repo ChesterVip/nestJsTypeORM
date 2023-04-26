@@ -5,12 +5,14 @@ import {ShopModule} from "../shop/shop.module";
 import {TypeOrmModule} from "@nestjs/typeorm";
 import {ItemInBasket} from "./item-in-basket.entity";
 import {UserModule} from "../users/user.module";
+import {CacheModule} from "../cache/cache.module";
 
 @Module(
     {
         imports: [
             forwardRef(() => ShopModule),
             forwardRef(() => UserModule),
+            forwardRef(() => CacheModule),
             TypeOrmModule.forFeature([ItemInBasket])
         ],
         controllers: [BasketController],

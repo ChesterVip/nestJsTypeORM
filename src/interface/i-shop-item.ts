@@ -11,6 +11,6 @@ export type GetOneProductResponse = IShopItem;
 
 export type CreateProductResponse = IShopItem;
 export interface GetPaginatedListOfProductsResponse{
-    items: ShopItem[];
+    filteredItems: IShopItem[];
     pagesCount: number;
 }
